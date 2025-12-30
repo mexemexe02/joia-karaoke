@@ -1,0 +1,17 @@
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+python-multipart==0.0.6
+yt-dlp==2023.11.16
+spleeter==2.3.2
+openai-whisper==20231117
+ffmpeg-python==0.2.0
+pysubs2==1.6.3
+google-api-python-client==2.108.0
+google-auth-httplib2==0.1.1
+google-auth-oauthlib==1.1.0
+pydantic==2.5.0
+python-dotenv==1.0.0
+celery==5.3.4
+redis==5.0.1
+aiofiles==23.2.1
+
