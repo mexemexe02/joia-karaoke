@@ -104,54 +104,70 @@ async def process_karaoke(job_id: str, request: KaraokeRequest):
         # Update status
         jobs[job_id]["status"] = "processing"
         jobs[job_id]["progress"] = 10
-        jobs[job_id]["message"] = "Downloading video..."
+        jobs[job_id]["message"] = "Downloading video from YouTube..."
         
         # Step 1: Download
-        video_path = await processor.download_youtube(request.youtube_url, job_id)
+        try:
+            video_path = await processor.download_youtube(request.youtube_url, job_id)
+        except Exception as e:
+            raise RuntimeError(f"Failed to download video: {str(e)}") from e
         
         jobs[job_id]["progress"] = 30
-        jobs[job_id]["message"] = "Removing vocals..."
+        jobs[job_id]["message"] = "Removing vocals (this may take a few minutes)..."
         
         # Step 2: Remove vocals
-        instrumental_path = await processor.remove_vocals(video_path, job_id)
+        try:
+            instrumental_path = await processor.remove_vocals(video_path, job_id)
+        except Exception as e:
+            raise RuntimeError(f"Failed to remove vocals: {str(e)}") from e
         
         jobs[job_id]["progress"] = 50
         jobs[job_id]["message"] = "Processing lyrics..."
         
         # Step 3: Get/sync lyrics
-        lyrics_data = await processor.process_lyrics(
-            instrumental_path, 
-            request.lyrics,
-            job_id
-        )
+        try:
+            lyrics_data = await processor.process_lyrics(
+                instrumental_path, 
+                request.lyrics,
+                job_id
+            )
+        except Exception as e:
+            raise RuntimeError(f"Failed to process lyrics: {str(e)}") from e
         
         jobs[job_id]["progress"] = 70
-        jobs[job_id]["message"] = "Rendering video..."
+        jobs[job_id]["message"] = "Rendering karaoke video..."
         
         # Step 4: Render karaoke video
-        output_path = await processor.render_video(
-            instrumental_path,
-            lyrics_data,
-            request.title or "Karaoke Song",
-            job_id
-        )
+        try:
+            output_path = await processor.render_video(
+                instrumental_path,
+                lyrics_data,
+                request.title or "Karaoke Song",
+                job_id
+            )
+        except Exception as e:
+            raise RuntimeError(f"Failed to render video: {str(e)}") from e
         
         jobs[job_id]["progress"] = 90
-        jobs[job_id]["message"] = "Uploading to YouTube..."
+        jobs[job_id]["message"] = "Finalizing..."
         
         # Step 5: Upload to YouTube (or return local path for now)
         # For Phase 1, we'll return the local path and user uploads manually
-        result_url = output_path  # TODO: Upload to YouTube
+        result_url = output_path  # TODO: Upload to YouTube (Phase 2)
         
         jobs[job_id]["status"] = "completed"
         jobs[job_id]["progress"] = 100
-        jobs[job_id]["message"] = "Karaoke video created!"
+        jobs[job_id]["message"] = "Karaoke video created! (Manual upload required for Phase 1)"
         jobs[job_id]["result_url"] = result_url
         
     except Exception as e:
         jobs[job_id]["status"] = "failed"
         jobs[job_id]["error"] = str(e)
         jobs[job_id]["message"] = f"Error: {str(e)}"
+        # Log the full error for debugging
+        import traceback
+        print(f"Error processing karaoke job {job_id}:")
+        print(traceback.format_exc())
 
 if __name__ == "__main__":
     import uvicorn

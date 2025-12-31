@@ -174,12 +174,21 @@ class KaraokeProcessor:
         subtitle_path = output_dir / "lyrics.ass"
         subs.save(str(subtitle_path))
         
+        # Get audio duration for video length
+        import json
+        duration_result = subprocess.run([
+            'ffprobe', '-v', 'error', '-show_entries', 'format=duration',
+            '-of', 'json', audio_path
+        ], capture_output=True, text=True, check=True)
+        
+        duration = float(json.loads(duration_result.stdout)['format']['duration'])
+        
         # Render video with FFmpeg
         # Create a simple background (black or gradient)
         subprocess.run([
             'ffmpeg',
             '-f', 'lavfi',
-            '-i', 'color=c=black:s=1920x1080:d=60',  # Black background, 60s default
+            '-i', f'color=c=black:s=1920x1080:d={int(duration) + 1}',  # Black background, match audio duration
             '-i', audio_path,
             '-vf', f"subtitles={subtitle_path}:force_style='FontSize=48,PrimaryColour=&H00FFFFFF,Outline=2,Shadow=2,Alignment=5'",
             '-c:v', 'libx264',

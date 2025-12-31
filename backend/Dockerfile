@@ -24,9 +24,9 @@ RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
     pip install --no-cache-dir spleeter && \
     pip install --no-cache-dir openai-whisper
 
-# Download Spleeter models (will be cached in Docker layer)
-# This happens on first use, but we can pre-download to avoid delays
-RUN python -c "from spleeter.separator import Separator; Separator('spleeter:2stems-16kHz')" || true
+# Pre-download Spleeter models (will be cached in Docker layer)
+# This avoids delays on first use - models are ~100MB
+RUN python -c "from spleeter.separator import Separator; Separator('spleeter:2stems-16kHz')" 2>&1 | head -20 || echo "Spleeter model download will happen on first use"
 
 # Copy application
 COPY . .
