@@ -8,8 +8,19 @@ import tempfile
 from pathlib import Path
 from typing import Optional, Dict
 import yt_dlp
-import whisper
-from pysubs2 import SSAFile, SSAEvent, SSAStyle
+
+# Import with fallback for missing dependencies
+try:
+    import whisper
+except ImportError:
+    whisper = None
+
+try:
+    from pysubs2 import SSAFile, SSAEvent, SSAStyle
+except ImportError:
+    SSAFile = None
+    SSAEvent = None
+    SSAStyle = None
 
 class KaraokeProcessor:
     def __init__(self):
@@ -53,31 +64,36 @@ class KaraokeProcessor:
         output_dir = Path(audio_path).parent
         output_path = output_dir / 'instrumental.wav'
         
-        # Spleeter command
-        # Note: Spleeter needs to be installed and models downloaded
-        subprocess.run([
-            'spleeter', 'separate',
-            '-p', 'spleeter:2stems-16kHz',
-            '-o', str(output_dir),
-            audio_path
-        ], check=True, capture_output=True)
-        
-        # Spleeter outputs to a subdirectory
-        # Format: {output_dir}/{filename}/accompaniment.wav
-        audio_name = Path(audio_path).stem
-        spleeter_output = output_dir / audio_name / 'accompaniment.wav'
-        
-        if spleeter_output.exists():
-            # Convert to MP3 for consistency
-            subprocess.run([
-                'ffmpeg', '-i', str(spleeter_output),
-                '-acodec', 'libmp3lame',
-                '-ab', '192k', str(output_path),
-                '-y'
-            ], check=True, capture_output=True)
-            return str(output_path)
-        
-        raise FileNotFoundError(f"Spleeter output not found: {spleeter_output}")
+        try:
+            # Spleeter command
+            # Note: Spleeter needs to be installed and models downloaded
+            result = subprocess.run([
+                'spleeter', 'separate',
+                '-p', 'spleeter:2stems-16kHz',
+                '-o', str(output_dir),
+                audio_path
+            ], check=True, capture_output=True, text=True)
+            
+            # Spleeter outputs to a subdirectory
+            # Format: {output_dir}/{filename}/accompaniment.wav
+            audio_name = Path(audio_path).stem
+            spleeter_output = output_dir / audio_name / 'accompaniment.wav'
+            
+            if spleeter_output.exists():
+                # Convert to MP3 for consistency
+                subprocess.run([
+                    'ffmpeg', '-i', str(spleeter_output),
+                    '-acodec', 'libmp3lame',
+                    '-ab', '192k', str(output_path),
+                    '-y'
+                ], check=True, capture_output=True)
+                return str(output_path)
+            
+            raise FileNotFoundError(f"Spleeter output not found: {spleeter_output}")
+        except subprocess.CalledProcessError as e:
+            raise RuntimeError(f"Spleeter failed: {e.stderr}") from e
+        except FileNotFoundError:
+            raise RuntimeError("Spleeter command not found. Please install spleeter.")
     
     async def process_lyrics(
         self, 
@@ -86,28 +102,34 @@ class KaraokeProcessor:
         job_id: str
     ) -> Dict:
         """Process lyrics - transcribe if not provided, sync timing"""
+        if whisper is None:
+            raise RuntimeError("Whisper not installed. Please install openai-whisper.")
+        
         if not self.whisper_model:
             # Load Whisper model (base model for speed)
             self.whisper_model = whisper.load_model("base")
         
-        if lyrics_text:
-            # User provided lyrics - use Whisper to get timing
-            result = self.whisper_model.transcribe(audio_path, word_timestamps=True)
-            # Match provided lyrics with transcribed words for timing
-            # This is simplified - full implementation would align text
-            return {
-                "text": lyrics_text,
-                "segments": result.get("segments", []),
-                "words": result.get("words", [])
-            }
-        else:
-            # Auto-transcribe
-            result = self.whisper_model.transcribe(audio_path, word_timestamps=True)
-            return {
-                "text": result["text"],
-                "segments": result.get("segments", []),
-                "words": result.get("words", [])
-            }
+        try:
+            if lyrics_text:
+                # User provided lyrics - use Whisper to get timing
+                result = self.whisper_model.transcribe(audio_path, word_timestamps=True)
+                # Match provided lyrics with transcribed words for timing
+                # This is simplified - full implementation would align text
+                return {
+                    "text": lyrics_text,
+                    "segments": result.get("segments", []),
+                    "words": result.get("words", [])
+                }
+            else:
+                # Auto-transcribe
+                result = self.whisper_model.transcribe(audio_path, word_timestamps=True)
+                return {
+                    "text": result["text"],
+                    "segments": result.get("segments", []),
+                    "words": result.get("words", [])
+                }
+        except Exception as e:
+            raise RuntimeError(f"Whisper transcription failed: {str(e)}") from e
     
     async def render_video(
         self,
@@ -117,6 +139,9 @@ class KaraokeProcessor:
         job_id: str
     ) -> str:
         """Render karaoke video with lyrics overlay"""
+        if SSAFile is None:
+            raise RuntimeError("pysubs2 not installed. Please install pysubs2.")
+        
         output_dir = Path(audio_path).parent
         output_path = output_dir / f"{title.replace(' ', '_')}_karaoke.mp4"
         

@@ -1,11 +1,13 @@
 FROM python:3.11-slim
 
 # Install system dependencies
+# Note: Spleeter and Whisper need additional packages
 RUN apt-get update && apt-get install -y \
     ffmpeg \
     libsndfile1 \
     git \
     curl \
+    build-essential \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -13,12 +15,18 @@ WORKDIR /app
 # Copy requirements
 COPY requirements.txt .
 
-# Install Python dependencies with retry logic
+# Install Python dependencies
+# Note: Spleeter and Whisper are large packages, install separately for better error handling
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
-    pip install --no-cache-dir -r requirements.txt || \
-    (pip install --no-cache-dir fastapi uvicorn python-multipart python-dotenv && \
-     pip install --no-cache-dir yt-dlp && \
-     pip install --no-cache-dir supabase)
+    pip install --no-cache-dir fastapi uvicorn python-multipart python-dotenv && \
+    pip install --no-cache-dir yt-dlp supabase && \
+    pip install --no-cache-dir pysubs2 && \
+    pip install --no-cache-dir spleeter && \
+    pip install --no-cache-dir openai-whisper
+
+# Download Spleeter models (will be cached in Docker layer)
+# This happens on first use, but we can pre-download to avoid delays
+RUN python -c "from spleeter.separator import Separator; Separator('spleeter:2stems-16kHz')" || true
 
 # Copy application
 COPY . .
