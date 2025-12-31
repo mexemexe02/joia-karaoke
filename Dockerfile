@@ -35,8 +35,13 @@ ENV NEXT_TELEMETRY_DISABLED 1
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-# Copy public directory (created in builder stage)
-COPY --from=builder --chown=nextjs:nodejs /app/public ./public
+# Copy public directory if it exists and has content
+# Next.js standalone output may already include public files, but we copy it explicitly
+RUN mkdir -p ./public
+RUN --mount=from=builder,source=/app/public,target=/tmp/public \
+    if [ -d /tmp/public ] && [ "$(ls -A /tmp/public 2>/dev/null)" ]; then \
+        cp -r /tmp/public/* ./public/; \
+    fi
 
 # Set the correct permission for prerender cache
 RUN mkdir .next
