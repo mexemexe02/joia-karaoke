@@ -20,6 +20,9 @@ COPY . .
 # Uncomment the following line in case you want to disable telemetry during the build.
 ENV NEXT_TELEMETRY_DISABLED 1
 
+# Create public directory if it doesn't exist (Next.js needs it)
+RUN mkdir -p public
+
 RUN npm run build
 
 # Production image, copy all the files and run next
@@ -32,7 +35,11 @@ ENV NEXT_TELEMETRY_DISABLED 1
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-COPY --from=builder /app/public ./public
+# Create public directory (will be empty if it doesn't exist in source)
+RUN mkdir -p ./public
+
+# Copy public directory from builder if it exists, otherwise keep empty directory
+COPY --from=builder --chown=nextjs:nodejs /app/public* ./public/ 2>/dev/null || true
 
 # Set the correct permission for prerender cache
 RUN mkdir .next
