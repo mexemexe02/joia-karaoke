@@ -18,8 +18,8 @@ COPY requirements.txt .
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Download Spleeter models (2stems-16kHz)
-RUN python -c "from spleeter.separator import Separator; Separator('spleeter:2stems-16kHz')"
+# Download Spleeter models (2stems-16kHz) - download on first use instead
+# RUN python -c "from spleeter.separator import Separator; Separator('spleeter:2stems-16kHz')"
 
 # Copy application
 COPY . .
