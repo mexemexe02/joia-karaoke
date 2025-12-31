@@ -1,25 +1,19 @@
 FROM python:3.11-slim
 
-# Install system dependencies
+# Install system dependencies in one step
 RUN apt-get update && apt-get install -y \
     ffmpeg \
-    && rm -rf /var/lib/apt/lists/*
-
-# Install Spleeter dependencies
-RUN apt-get update && apt-get install -y \
     libsndfile1 \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-# Copy requirements
+# Copy requirements first (for better caching)
 COPY requirements.txt .
 
 # Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Download Spleeter models (2stems-16kHz) - download on first use instead
-# RUN python -c "from spleeter.separator import Separator; Separator('spleeter:2stems-16kHz')"
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
 
 # Copy application
 COPY . .
