@@ -56,7 +56,7 @@ export default function AuthModal({ show, onClose }: AuthModalProps) {
                 },
               },
             }}
-            providers={['email']}
+            providers={['email' as any]}
             magicLink={true}
           />
         </div>
