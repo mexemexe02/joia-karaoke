@@ -72,10 +72,9 @@ class KaraokeProcessor:
         output_dir = Path(audio_path).parent
         output_path = output_dir / 'instrumental.mp3'
         
-        # For Phase 1 local testing: Skip vocal removal if Demucs has encoding issues
-        # This allows us to test the rest of the pipeline
-        # In production/Docker, this should work fine
-        use_demucs = False  # Set to True when encoding is fixed or in Docker
+        # Enable Demucs for production (Docker/Linux environment)
+        # On Windows, this may have encoding issues, but works fine in Docker
+        use_demucs = True  # Works in Docker/Linux, may have issues on Windows
         
         if not use_demucs:
             # Fallback: Use original audio (for testing pipeline)
