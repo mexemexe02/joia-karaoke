@@ -16,17 +16,17 @@ WORKDIR /app
 COPY requirements.txt .
 
 # Install Python dependencies
-# Note: Spleeter and Whisper are large packages, install separately for better error handling
+# Note: Demucs, Whisper, and Torch are large packages, install separately for better error handling
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
     pip install --no-cache-dir fastapi uvicorn python-multipart python-dotenv && \
     pip install --no-cache-dir yt-dlp supabase && \
     pip install --no-cache-dir pysubs2 && \
-    pip install --no-cache-dir spleeter && \
+    pip install --no-cache-dir demucs && \
     pip install --no-cache-dir openai-whisper
 
-# Pre-download Spleeter models (will be cached in Docker layer)
-# This avoids delays on first use - models are ~100MB
-RUN python -c "from spleeter.separator import Separator; Separator('spleeter:2stems-16kHz')" 2>&1 | head -20 || echo "Spleeter model download will happen on first use"
+# Pre-download Demucs model (will be cached in Docker layer)
+# This avoids delays on first use - model is ~100MB
+RUN python -c "from demucs.pretrained import get_model; get_model('htdemucs')" 2>&1 | head -20 || echo "Demucs model download will happen on first use"
 
 # Copy application
 COPY . .

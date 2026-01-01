@@ -119,7 +119,12 @@ async def process_karaoke(job_id: str, request: KaraokeRequest):
         try:
             instrumental_path = await processor.remove_vocals(video_path, job_id)
         except Exception as e:
-            raise RuntimeError(f"Failed to remove vocals: {str(e)}") from e
+            # Handle encoding errors when converting exception to string
+            try:
+                error_msg = str(e)
+            except (UnicodeEncodeError, UnicodeDecodeError):
+                error_msg = "Failed to remove vocals (encoding error)"
+            raise RuntimeError(f"Failed to remove vocals: {error_msg}") from e
         
         jobs[job_id]["progress"] = 50
         jobs[job_id]["message"] = "Processing lyrics..."

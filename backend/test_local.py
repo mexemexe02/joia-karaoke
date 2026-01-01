@@ -9,37 +9,37 @@ def test_imports():
     print("Testing imports...")
     try:
         import fastapi
-        print("✅ FastAPI")
+        print("[OK] FastAPI")
     except ImportError as e:
         print(f"❌ FastAPI: {e}")
         return False
     
     try:
         import yt_dlp
-        print("✅ yt-dlp")
+        print("[OK] yt-dlp")
     except ImportError as e:
-        print(f"❌ yt-dlp: {e}")
+        print(f"[FAIL] yt-dlp: {e}")
         return False
     
     try:
         import whisper
-        print("✅ whisper")
+        print("[OK] whisper")
     except ImportError as e:
-        print(f"❌ whisper: {e}")
+        print(f"[FAIL] whisper: {e}")
         return False
     
     try:
         import pysubs2
-        print("✅ pysubs2")
+        print("[OK] pysubs2")
     except ImportError as e:
-        print(f"❌ pysubs2: {e}")
+        print(f"[FAIL] pysubs2: {e}")
         return False
     
     try:
         import spleeter
-        print("✅ spleeter")
+        print("[OK] spleeter")
     except ImportError as e:
-        print(f"⚠️  spleeter: {e} (may need separate install)")
+        print(f"[WARN] spleeter: {e} (may need separate install)")
     
     # Check FFmpeg
     import subprocess
@@ -48,15 +48,15 @@ def test_imports():
                               capture_output=True, 
                               timeout=5)
         if result.returncode == 0:
-            print("✅ FFmpeg")
+            print("[OK] FFmpeg")
         else:
-            print("❌ FFmpeg not found")
+            print("[FAIL] FFmpeg not found")
             return False
     except FileNotFoundError:
         print("❌ FFmpeg not installed")
         return False
     except Exception as e:
-        print(f"⚠️  FFmpeg check failed: {e}")
+        print(f"[WARN] FFmpeg check failed: {e}")
     
     return True
 
@@ -73,10 +73,10 @@ def test_basic_functionality():
         
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(test_url, download=False)
-            print(f"✅ YouTube info extraction works")
+            print(f"[OK] YouTube info extraction works")
             print(f"   Title: {info.get('title', 'N/A')[:50]}")
     except Exception as e:
-        print(f"⚠️  YouTube test failed: {e}")
+        print(f"[WARN] YouTube test failed: {e}")
         print("   (This is OK - may need network or video may be unavailable)")
     
     return True
@@ -87,14 +87,14 @@ if __name__ == "__main__":
     print("=" * 50)
     
     if test_imports():
-        print("\n✅ All imports successful!")
+        print("\n[OK] All imports successful!")
         test_basic_functionality()
         print("\n" + "=" * 50)
-        print("✅ Basic tests passed!")
-        print("Ready to deploy to Coolify 🚀")
+        print("[OK] Basic tests passed!")
+        print("Ready to deploy to Coolify!")
         print("=" * 50)
     else:
-        print("\n❌ Some imports failed")
+        print("\n[FAIL] Some imports failed")
         print("Install missing packages: pip install -r requirements.txt")
         sys.exit(1)
 

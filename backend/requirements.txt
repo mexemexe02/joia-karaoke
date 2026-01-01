@@ -5,7 +5,8 @@ python-dotenv==1.0.0
 yt-dlp>=2023.11.16
 supabase==2.0.0
 # Phase 1: Karaoke processing dependencies
-spleeter>=2.3.2
+# Note: Using Demucs instead of Spleeter (better maintained, no dependency conflicts)
+demucs>=4.0.0
 openai-whisper>=20231117
 pysubs2>=1.6.1
 
